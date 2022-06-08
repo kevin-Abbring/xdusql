@@ -48,6 +48,7 @@ struct Selectstruct{ /*select语法树的根节点*/
     struct Selectedtables *st; //所选基本表
     struct Conditions *cons; //条件
 };
+
 struct Setstruct
 {
     struct Setstruct *next_s;
@@ -55,26 +56,26 @@ struct Setstruct
     char *value;
 };
 
-void getDB();
-void useDB();
-void createDB();
-void dropDB();
+void createDB();//创建数据库文件夹
+void getDB();//输出.database文件
+void useDB();//将目录转换为指定database
 
 void createTable(struct Createstruct *cs_root);
 void getTable();
-void dropTable(char * tableName);
-
 void insertSingle(char * tableName, struct insertValue* values);
 void insertDouble(char * tableName, struct insertValue* rowNames, struct insertValue* valueNames);
-void deleteAll(char * tableName);
+
 void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableRoot);
 void freeWhere(struct Conditions *conditionRoot);
 int whereSearch(struct Conditions *conditionRoot, int totField, char allField[][64], char value[][64]);
 void selectWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableRoot, struct Conditions *conditionRoot);
-void deleteWhere(char *tableName, struct Conditions *conditionRoot);
+
 void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *conditionRoot);
 
+void deleteAll(char * tableName);
+void deleteWhere(char *tableName, struct Conditions *conditionRoot);
 
-
+void dropTable(char * tableName);
+void dropDB();
 
 #endif

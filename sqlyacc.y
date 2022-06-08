@@ -7,27 +7,55 @@
 #include <string.h>
 #include <fcntl.h>
 #include "dbfunction.h"
-
 char database[64]={0};
 char rootDir[128]={0};
-
 void yyerror(const char *str){
     fprintf(stderr,"error:%s\n",str);
 }
-
 int yywrap(){
     return 1;
 }
 int main()
 {
-    printf("***********************\n");
-    printf("  Welcome to XDUSQL!  \n");
-    printf("***********************\n\n");
-    printf("XDUSQL>");
+    printf("----------------------------------------------------------------------\n");
+    printf("██╗  ██╗██████╗ ███████╗ ██████╗ ██╗ \n");
+    printf("╚██╗██╔╝██╔══██╗██╔════╝██╔═══██╗██║    \n");
+    printf(" ╚███╔╝ ██║  ██║███████╗██║   ██║██║ \n");
+    printf(" ██╔██╗ ██║  ██║╚════██║██║▄▄ ██║██║\n");
+    printf("██╔╝ ██╗██████╔╝███████║╚██████╔╝███████╗\n");
+    printf("╚═╝  ╚═╝╚═════╝ ╚══════╝ ╚══▀▀═╝ ╚══════╝\n");
+    printf("----------------------------------------------------------------------\n");
+    printf("QUICK EXAMPLE:\n");
+    printf("CREATE DATABASE DB1;\n");
+    printf("CREATE DATABASE DB2;\n");
+    printf("SHOW DATABASE;\n");
+    printf("USE DB1;\n");
+    printf("CREATE TABLE STUDENT(NAME CHAR,AGE INT,NUMBER CHAR);\n");
+    printf("CREATE TABLE UNIVER2(NAME CHAR,AGE INT,NUMBER CHAR);\n");
+    printf("SHOW TABLE;\n");
+    printf("INSERT INTO STUDENT(kevin,21,19030100351);\n");
+    printf("INSERT INTO STUDENT(mark,22,19030900888);\n");
+    printf("INSERT INTO STUDENT(tiny,21,19030400245);\n");
+    printf("INSERT INTO STUDENT(abbring,27,19030388374);\n");
+    printf("INSERT INTO STUDENT(dany,25,190304746529);\n");
+    printf("INSERT INTO STUDENT(tom,26,19030915697);\n");
+    printf("INSERT INTO STUDENT(adam,23,19030125469);\n");
+    printf("INSERT INTO STUDENT(linux,22,19030456289);\n");
+    printf("INSERT INTO STUDENT(tomas,21,19030784596);\n");
+    printf("INSERT INTO STUDENT(marin,20,19030154896);\n");
+    printf("INSERT INTO STUDENT(dankon,19,19030159753);\n");
+    printf("INSERT INTO STUDENT(pinton,18,19030659137);\n");
+    printf("INSERT INTO STUDENT(tony,23,19030759402);\n");
+    printf("SELECT NAME,AGE,NUMBER FROM STUDENT;\n");
+    printf("UPDATE STUDENT SET NAME='OLD' WHERE AGE>25;\n");
+    printf("SELECT NAME,AGE,NUMBER FROM STUDENT;\n");
+    printf("----------------------------------------------------------------------\n");
+    printf("XDUSQL->");
+
     getcwd(rootDir, sizeof(rootDir));
-    strcat(rootDir, "/XDUdatabase");
+    strcat(rootDir, "/XDUdatabase");//讲文件根目录绑定到指定文件夹
     yyparse();
-	
+    
 	return 0;
 }
 
@@ -190,6 +218,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                                $$->table = $3->table;
                                $$->next_sf = $1;
                           }
+
             table_field: field
                          {
                              $$ = (struct Selectedfields *)malloc(sizeof(struct Selectedfields));
@@ -204,6 +233,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                              $$->table = $1;
                              $$->next_sf = NULL;
                          }
+
             tables: tables ',' table
                     {
                         $$ = (struct Selectedtables *)malloc(sizeof(struct Selectedtables));
@@ -216,6 +246,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                         $$->table = $1;
                         $$->next_st = NULL;
                     }
+
             conditions: condition
                         {
                             $$ = $1;
@@ -242,6 +273,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                             char *cc = &c;
                             $$->comp_op = cc;
                         }
+
             condition: comp_left comp_op comp_right
                        {
                             $$ = (struct Conditions *)malloc(sizeof(struct Conditions));
@@ -249,6 +281,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                             $$->right = $3;
                             $$->comp_op = $2;
                        }
+
             comp_left: table_field
                        {
                             $$ = (struct Conditions *)malloc(sizeof(struct Conditions));
@@ -258,6 +291,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                             $$->left = NULL;
                             $$->right = NULL;
                        }
+
             comp_right: QUOTE table_field QUOTE
                         {
                             $$ = (struct Conditions *)malloc(sizeof(struct Conditions));

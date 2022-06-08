@@ -1,7 +1,7 @@
 #include "dbfunction.h"
 extern char database[64];
 extern char rootDir[128];
-
+//输出.database文件
 void getDB()
 {
     FILE* fstream;
@@ -20,9 +20,9 @@ void getDB()
     }
     fclose(fstream);
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
-
+//将目录转换为指定database
 void useDB()
 {
     char dir[128]={0};
@@ -36,14 +36,15 @@ void useDB()
         printf("Current Database: \n%s\n", database);
         chdir("rootDir");
     }
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void createDB()
 {   
-    printf("\n enter 1 !\n");
+    /* Change the process's working directory to PATH.  */
     chdir(rootDir);
-    printf("%s", database);
+    printf("%s", database);//不加这句会gdb会报错
+    //read write execute
     if(mkdir(database, S_IRUSR | S_IWUSR | S_IXUSR) == -1)
         printf("\n enter 2 !\n");   
     else
@@ -65,7 +66,7 @@ void createDB()
     }
     strcpy(database, "\0");
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void dropDB()
@@ -101,12 +102,11 @@ void dropDB()
     }
     chdir(rootDir);
     printf("Drop database %s succeed.\n", database);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void createTable(struct Createstruct *cs_root)
 {
-    printf("\n enter 1 !\n");
     int tot = 0, i = 0;
     struct Createfieldsdef * fieldPointer = NULL;
     char rows[64][64]={0};
@@ -169,7 +169,7 @@ void createTable(struct Createstruct *cs_root)
     }
     free(cs_root);
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void getTable()
@@ -197,7 +197,7 @@ void getTable()
         fclose(fstream);
     }
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void dropTable(char * tableName)
@@ -239,7 +239,7 @@ void dropTable(char * tableName)
     }
     chdir(rootDir);
     printf("Drop table %s succeed.\n", tableName);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void insertSingle(char * tableName, struct insertValue* values)
@@ -283,7 +283,7 @@ void insertSingle(char * tableName, struct insertValue* values)
         free(valuesTmp);
     }
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void insertDouble(char * tableName, struct insertValue* rowNames, struct insertValue* valueNames)
@@ -367,7 +367,7 @@ void insertDouble(char * tableName, struct insertValue* rowNames, struct insertV
         free(valuesTmp);
     }
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void deleteAll(char * tableName)
@@ -411,7 +411,7 @@ void deleteAll(char * tableName)
         else
             printf("Table %s doesn't exist!\n", tableName);
     }
-    printf("MiniSQL>");
+    printf("XDUSQL->");
     chdir(rootDir);
 }
 
@@ -743,7 +743,7 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
         free(tableTmp);
     }
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void freeWhere(struct Conditions *conditionRoot)
@@ -1104,7 +1104,7 @@ void selectWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableR
     }
     freeWhere(conditionRoot);
     chdir(rootDir);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
 }
 
 void deleteWhere(char *tableName, struct Conditions *conditionRoot)
@@ -1189,7 +1189,7 @@ void deleteWhere(char *tableName, struct Conditions *conditionRoot)
     }
     free(tableName);
     freeWhere(conditionRoot);
-    printf("MiniSQL>");
+    printf("XDUSQL->");
     chdir(rootDir);
 }
 
@@ -1314,6 +1314,6 @@ void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *
         setRoot = setRoot->next_s;
         free(setTmp);
     }
-    printf("MiniSQL>");
+    printf("XDUSQL->");
     chdir(rootDir);
 }

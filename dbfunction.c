@@ -1,4 +1,5 @@
 #include "dbfunction.h"
+/*y文件里*/
 extern char database[64];
 extern char rootDir[128];
 //输出.database文件
@@ -68,7 +69,7 @@ void createDB()
     chdir(rootDir);
     printf("XDUSQL->");
 }
-
+//用system函数调用rm -rf删除文件，然后复制一份.databases.tmp回写.databases时不写删除的表
 void dropDB()
 {
     chdir(rootDir);
@@ -82,7 +83,7 @@ void dropDB()
         char dbname[64] = {0};
 
         chdir("..");
-        strcat(cmd, database);
+        strcat(cmd, database);//删除数据库文件
         system(cmd);
 
         system("mv .databases .databases.tmp");
@@ -107,6 +108,7 @@ void dropDB()
 
 void createTable(struct Createstruct *cs_root)
 {
+    
     int tot = 0, i = 0;
     struct Createfieldsdef * fieldPointer = NULL;
     char rows[64][64]={0};
@@ -118,6 +120,7 @@ void createTable(struct Createstruct *cs_root)
         printf("\n enter 3 !\n");
     else
     {
+        //检查表是否存在
         FILE* ftables;
         ftables = fopen(".tables", "a+");
         if(ftables == NULL)
@@ -134,6 +137,7 @@ void createTable(struct Createstruct *cs_root)
             else {
                 fprintf(ftables, "%s\n", cs_root->table);
                 fclose(ftables);
+
                 fieldPointer = cs_root->fdef;
                 FILE* ftable;
                 ftable = fopen(cs_root->table, "a+");
@@ -143,13 +147,16 @@ void createTable(struct Createstruct *cs_root)
                     printf("\n enter 6 !\n");
                 }
                 else {
+                    //列读入rows，链表是逆序的（左递归导致先插入的在右边）
                     while(fieldPointer != NULL)
                     {
                         strcpy(rows[tot], fieldPointer->field);
                         tot ++;
                         fieldPointer = fieldPointer->next_fdef;
                     }
-                    fprintf(ftable, "%d\n", tot);
+                    //再把rows->ftable
+                    fprintf(ftable, "%d\n", tot);//列数
+                    //列名（倒序才能恢复链表逆序）
                     for(i = tot - 1; i >= 0; i--)
                         fprintf(ftable, "%s\n", rows[i]);
                     printf("\nCreate table %s succeed, %d row(s) created.\n", cs_root->table, tot);
@@ -202,6 +209,7 @@ void getTable()
 
 void dropTable(char * tableName)
 {
+    //切换路径: rootDir//database
     chdir(rootDir);
     if(strlen(database) == 0)
         printf("\nNo database, error!\n");
@@ -211,6 +219,7 @@ void dropTable(char * tableName)
     {
         if(access(tableName, F_OK) != -1)
         {
+            //删表
             char cmd[128]="rm -rf ";
             char tbname[64] = {0};
             FILE* filein;
@@ -218,7 +227,7 @@ void dropTable(char * tableName)
 
             strcat(cmd, tableName);
             system(cmd);
-
+            //改管理
             system("mv .tables .tables.tmp");
             filein = fopen(".tables.tmp", "r");
             fileout = fopen(".tables", "w");
@@ -242,8 +251,9 @@ void dropTable(char * tableName)
     printf("XDUSQL->");
 }
 
-void insertSingle(char * tableName, struct insertValue* values)
+void insertInOrder(char * tableName, struct insertValue* values)
 {
+    //切换到当前database
     chdir(rootDir);
     char valueChar[64][64] = {0};
     if(strlen(database) == 0)
@@ -251,21 +261,22 @@ void insertSingle(char * tableName, struct insertValue* values)
     else if(chdir(database) == -1)
         printf("\nError!\n");
     else
-    {
-        if(access(tableName, F_OK) != -1)
+    {   
+        if(access(tableName, F_OK) != -1)//检查表存在性，F_OK 只判断是否存在
         {
+            //打开表文件
             FILE* fileTable;
             int tot = 0, i = 0;
             fileTable = fopen(tableName, "a+");
             struct insertValue* valuesTmp = values;
+            //读出要插入的value
             while(valuesTmp != NULL)
             {
-                //printf("%s\n", valuesTmp->value);
                 strcpy(valueChar[tot], valuesTmp->value);
                 tot ++;
-                //fprintf(fileTable, "%s\n", valuesTmp->value);
                 valuesTmp = valuesTmp->nextValue;
             }
+            //写表
             for (i = tot-1; i >= 0; i--)
             {
                 fprintf(fileTable, "%s\n", valueChar[i]);
@@ -276,94 +287,11 @@ void insertSingle(char * tableName, struct insertValue* values)
         else
             printf("Table %s doesn't exist!\n", tableName);
     }
+    //回收空间
     while(values != NULL)
     {
         struct insertValue* valuesTmp = values;
         values = values->nextValue;
-        free(valuesTmp);
-    }
-    chdir(rootDir);
-    printf("XDUSQL->");
-}
-
-void insertDouble(char * tableName, struct insertValue* rowNames, struct insertValue* valueNames)
-{
-    chdir(rootDir);
-    char rows[64][64] = {0};
-    char insertRow[64][64] = {0}, insertValue[64][64] = {0};
-    if(strlen(database) == 0)
-        printf("\nNo database, error!\n");
-    else if(chdir(database) == -1)
-        printf("\nError!\n");
-    else
-    {
-        if(access(tableName, F_OK) != -1)
-        {
-            FILE* fileTable;
-            fileTable = fopen(tableName, "at+");
-            int tot = 0, i = 0, j = 0, totRow = 0, totValue = 0, flag = 0;
-            struct insertValue* valuesTmp = rowNames;
-
-            fscanf(fileTable, "%d", &tot);
-            for (i = 0; i < tot; ++i)
-            {
-                fscanf(fileTable, "%s", &rows[i]);
-            }
-            while(valuesTmp != NULL)
-            {
-                strcpy(insertRow[totRow], valuesTmp->value);
-                totRow++;
-                valuesTmp = valuesTmp->nextValue;
-            }
-            valuesTmp = valueNames;
-            while(valuesTmp != NULL)
-            {
-                strcpy(insertValue[totValue], valuesTmp->value);
-                totValue++;
-                valuesTmp = valuesTmp->nextValue;
-            }
-            if (totRow != totValue || totRow != tot)
-            {
-                printf("Rows and values don't match!\n");
-            }
-            else
-            {
-                for (i = 0; i < tot; ++i)
-                {
-                    //printf("%s\n", rows[i]);
-                    flag = 0;
-                    for (j = 0; j < tot; ++j)
-                    {
-                        if (strcmp(rows[i], insertRow[j]) == 0)
-                        {
-                            //printf("%s %s\n", insertRow[j], insertValue[j]);
-                            fprintf(fileTable, "%s\n", insertValue[j]);
-                            flag = 1;
-                            break;
-                        }
-                    }
-                    if (flag == 0)
-                    {
-                        printf("Error, row name doesn't match!\n");
-                    }
-                }
-                printf("Insert succeed.\n");
-            }
-            fclose(fileTable);
-        }
-        else
-            printf("Table %s doesn't exist!\n", tableName);
-    }
-    while(rowNames != NULL)
-    {
-        struct insertValue* valuesTmp = rowNames;
-        rowNames = rowNames->nextValue;
-        free(valuesTmp);
-    }
-    while(valueNames != NULL)
-    {
-        struct insertValue* valuesTmp = valueNames;
-        valueNames = valueNames->nextValue;
         free(valuesTmp);
     }
     chdir(rootDir);
@@ -388,6 +316,7 @@ void deleteAll(char * tableName)
             int tot = 0, i = 0;
 
             filein = fopen(tableName, "r");
+            //读出表头
             fscanf(filein, "%d", &tot);
             for (i = 0; i < tot; ++i)
             {
@@ -400,6 +329,7 @@ void deleteAll(char * tableName)
             system(cmd);
 
             fileout = fopen(tableName, "a+");
+            //回写表头
             fprintf(fileout, "%d\n", tot);
             for (i = 0; i < tot; ++i)
             {
@@ -415,6 +345,7 @@ void deleteAll(char * tableName)
     chdir(rootDir);
 }
 
+//生成一个.tmp文件进行拼接打印，之后删除
 void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableRoot)
 {
     int totTable = 0, totField = 0, i = 0, j = 0, k = 0;
@@ -422,23 +353,24 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
     struct Selectedfields *fieldTmp = fieldRoot;
     struct Selectedtables *tableTmp = tableRoot;
 
+    //判断表存在性
     chdir(rootDir);
-
     if(strlen(database) == 0)
         printf("\nNo database, error!\n");
     else if(chdir(database) == -1)
         printf("\nError!\n");
     else
-    {
+    {   //读选择的表，统计数量，名字放入tableName
         while(tableTmp != NULL)
         {
             strcpy(tableName[totTable], tableTmp->table);
             tableTmp = tableTmp->next_st;
             totTable ++;
         }
-        if (fieldRoot == NULL)
+        if (fieldRoot == NULL)//没选择列，全部打印
         {
             int flag = 1;
+            //检测表存在性
             for (i = totTable-1; i >= 0; --i)
             {
                 if(access(tableName[i], F_OK) == -1)
@@ -448,7 +380,7 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
                     break;
                 }
             }
-            if (flag && totTable == 1)
+            if (flag && totTable == 1)//表存在且数量等于1
             {
                 FILE* filein;
                 int tot = 0, i = 0;
@@ -470,9 +402,9 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
                 fclose(filein);
                 printf("Select succeed.\n");
             }
-            else if (flag && totTable == 2)
+            else if (flag && totTable == 2)//表的数量大于1则需要进行迪卡尔积拼接
             {
-                FILE * fileTable[64];
+                FILE * fileTable[64];//打开所有表
                 FILE * fileTmp;
                 int fieldCount[2] = {0}, valueCount[2] = {0};
                 char values1[64][64] = {0}, values2[64][64] = {0};
@@ -481,29 +413,34 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
                 strcpy(tableName[0], tableName[1]);
                 strcpy(tableName[1], tmp);
                 fileTmp = fopen(".tmp", "w");
+                //打开所有表
                 for (i = 0; i < totTable; ++i)
                 {
                     fileTable[i] = fopen(tableName[i], "r");
                 }
+                //统计总列数
                 totField = 0;
                 for (i = 0; i < totTable; ++i)
                 {
                     fscanf(fileTable[i], "%d", &fieldCount[i]);
                     totField += fieldCount[i];
                 }
-
+//总表fileTmp
+                //总表的列数就是统计的总列数
                 fprintf(fileTmp, "%d\n", totField);
+                //读第一个表的列放入总表
                 for (i = 0; i < fieldCount[0]; ++i)
                 {
                     fscanf(fileTable[0], "%s", tmp);
                     fprintf(fileTmp, "%s\n", tmp);
                 }
+                //读第二个表的列放入总表
                 for (i = 0; i < fieldCount[1]; ++i)
                 {
                     fscanf(fileTable[1], "%s", tmp);
                     fprintf(fileTmp, "%s\n", tmp);
                 }
-
+//复制值 valueCount[]放复制的行数，将所有行读入values[]
                 while(fscanf(fileTable[0], "%s", tmp) != EOF)
                 {
                     strcpy(values1[valueCount[0]], tmp);
@@ -514,7 +451,7 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
                     strcpy(values2[valueCount[1]], tmp);
                     valueCount[1]++;
                 }
-
+//进行笛卡尔积 valueCount[]/fieldCount[]为表的元组数量，将values[0]和values[1]拼接为fileTmp行
                 for (i = 0; i < valueCount[0]/fieldCount[0]; ++i)
                 {
                     for (k = 0; k < valueCount[1]/fieldCount[1]; ++k)
@@ -550,7 +487,7 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
                 printf("Select succeed.\n");
             }
         }
-        else
+        else//选择列了，打印的时候注意点
         {
             int flag = 1;
             char allField[64][64] = {0};
@@ -746,6 +683,7 @@ void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tabl
     printf("XDUSQL->");
 }
 
+//回收condition内存
 void freeWhere(struct Conditions *conditionRoot)
 {
     if (conditionRoot->left != NULL)
@@ -755,7 +693,7 @@ void freeWhere(struct Conditions *conditionRoot)
     else
         free(conditionRoot);
 }
-
+//根据condition对左右子树值进行判断，返回是否满足条件
 int whereSearch(struct Conditions *conditionRoot, int totField, char allField[][64], char value[][64])
 {
     char comp_op = *(conditionRoot->comp_op);
@@ -1109,13 +1047,13 @@ void selectWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableR
 
 void deleteWhere(char *tableName, struct Conditions *conditionRoot)
 {
-    int i = 0, j = 0, totField = 0;
-    char allField[64][64] = {0};
+    int i = 0, j = 0, totField = 0;//表列数
+    char allField[64][64] = {0};//所有列
     char field[64][64] = {0};
     struct Conditions *conditionTmp = conditionRoot;
 
+    //判断表存在性
     chdir(rootDir);
-
     if(strlen(database) == 0)
         printf("\nNo database, error!\n");
     else if(chdir(database) == -1)
@@ -1127,25 +1065,25 @@ void deleteWhere(char *tableName, struct Conditions *conditionRoot)
             printf("Table %s doesn't exist!\n", tableName);
         }
         else
-        {
+        {   //复制原表为 xxx.tmp临时文件，用条件筛选临时文件回写原表，最后删除临时文件
             FILE* filein;
             FILE* fileout;
             int end = 1;
-            char cp[64] = "cp ";
-            char rm[64] = "rm -rf ";
-            char tableTmp[64] = {0};
+            char cp[64] = "cp ";//cp tablename tablename.tmp
+            char rm[64] = "rm -rf ";//rm -rf tablename.tmp
+            char tableTmp[64] = {0};//tablename.tmp
             strcpy(tableTmp, tableName);
             strcat(tableTmp, ".tmp");
             strcat(cp, tableName);
             strcat(cp, " ");
             strcat(cp, tableTmp);
             strcat(rm, tableTmp);
-
             system(cp);
-
+            //tableTmp == tableName
             filein = fopen(tableTmp, "r");
             fileout = fopen(tableName, "w");
 
+            //从tmp回写表头
             fscanf(filein, "%d", &totField);
             fprintf(fileout, "%d\n", totField);
             for (int i = 0; i < totField; ++i)
@@ -1154,6 +1092,7 @@ void deleteWhere(char *tableName, struct Conditions *conditionRoot)
                 fprintf(fileout, "%s\n", allField[i]);
             }
 
+            //
             for (i = 0; ; ++i)
             {
                 int conditionFlag = 0;
@@ -1171,9 +1110,9 @@ void deleteWhere(char *tableName, struct Conditions *conditionRoot)
                 {
                     break;
                 }
-
+                //condition全由whereSearch处理，返回是否符合条件
                 conditionFlag = whereSearch(conditionRoot, totField, allField, field);
-                if (!conditionFlag)
+                if (!conditionFlag)//不符合删除条件的回写
                 {
                     for (j = 0; j < totField; ++j)
                     {
@@ -1204,7 +1143,6 @@ void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *
     struct Conditions *conditionTmp = conditionRoot;
 
     chdir(rootDir);
-
     if(strlen(database) == 0)
         printf("\nNo database, error!\n");
     else if(chdir(database) == -1)
@@ -1217,6 +1155,7 @@ void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *
         }
         else
         {
+            //创建临时文件，根据条件回写源文件
             FILE* filein;
             FILE* fileout;
             int end = 1;
@@ -1229,7 +1168,8 @@ void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *
             strcat(cp, " ");
             strcat(cp, tableTmp);
             strcat(rm, tableTmp);
-
+            
+            //把set结构体中的列名和要更改的值读出来
             totSet = 0;
             while(setTmp != NULL)
             {
@@ -1279,7 +1219,7 @@ void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *
                     }
                 }
                 else
-                {
+                {//符合条件的用改写值回写
                     for (j = 0; j < totField; ++j)
                     {
                         changeFlag = 0;

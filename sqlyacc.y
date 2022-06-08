@@ -49,6 +49,8 @@ int main()
     printf("SELECT NAME,AGE,NUMBER FROM STUDENT;\n");
     printf("UPDATE STUDENT SET NAME='OLD' WHERE AGE>25;\n");
     printf("SELECT NAME,AGE,NUMBER FROM STUDENT;\n");
+    printf("DELETE FROM STUDENT WHERE AGE=20;\n");
+    printf("DELETE STUDENT;\n");
     printf("----------------------------------------------------------------------\n");
     printf("XDUSQL->");
 
@@ -80,7 +82,7 @@ int main()
 CREATE SHOW DATABASE DATABASES TABLE TABLES 
 INSERT SELECT UPDATE DELETE DROP EXIT 
 NUMBER CHAR INT ID 
-AND OR FROM WHERE VALUES INTO SET QUOTE USE
+AND OR FROM WHERE VALUES INTO SET USE
 
 %type <yych> table field type ID NUMBER CHAR INT comp_op
 %type <cfdef_var> fieldsdefinition field_type
@@ -189,6 +191,7 @@ showsql: SHOW DATABASES ';'
             getTable();
         }
 table : ID{$$=$1;}
+
 selectsql:  SELECT fields_star FROM tables ';'
 	             {
                 selectNoWhere($2, $4);
@@ -251,11 +254,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                         {
                             $$ = $1;
                         }
-                        | '(' conditions ')'
-                        {
-                            $$ = $2;
-                        }
-                        | conditions AND conditions
+                        | conditions AND condition
                         {
                             $$ = (struct Conditions *)malloc(sizeof(struct Conditions));
                             $$->left = $1;
@@ -264,7 +263,7 @@ selectsql:  SELECT fields_star FROM tables ';'
                             char *cc = &c;
                             $$->comp_op = cc;
                         }
-                        | conditions OR conditions
+                        | conditions OR condition
                         {
                             $$ = (struct Conditions *)malloc(sizeof(struct Conditions));
                             $$->left = $1;
@@ -292,12 +291,12 @@ selectsql:  SELECT fields_star FROM tables ';'
                             $$->right = NULL;
                        }
 
-            comp_right: QUOTE table_field QUOTE
+            comp_right: table_field 
                         {
                             $$ = (struct Conditions *)malloc(sizeof(struct Conditions));
                             $$->type = 1;
-                            $$->value = $2->field;
-                            $$->table = $2->table;
+                            $$->value = $1->field;
+                            $$->table = $1->table;
                             $$->left = NULL;
                             $$->right = NULL;
                         }
@@ -343,12 +342,9 @@ selectsql:  SELECT fields_star FROM tables ';'
 
 insertsql: INSERT INTO ID '(' values ')' ';'
 	             {
-                insertSingle($3, $5);
+                insertInOrder($3, $5);
             }
-            | INSERT INTO ID '(' values ')' VALUES '(' values ')' ';'
-            {
-                insertDouble($3, $5, $9);
-            }
+
             values: value
                     {
                         $$ = (struct insertValue *)malloc(sizeof(struct insertValue));
@@ -361,7 +357,7 @@ insertsql: INSERT INTO ID '(' values ')' ';'
                         $$->value = $3->value;
                         $$->nextValue = $1;
                    }
-            value: QUOTE ID QUOTE
+            value: '"' ID '"'
                    {
                         $$ = (struct insertValue *)malloc(sizeof(struct insertValue));
                         $$->value = $2;
@@ -380,7 +376,11 @@ insertsql: INSERT INTO ID '(' values ')' ';'
                         $$->nextValue = NULL;
                    }
 
-deletesql: DELETE FROM table ';'
+deletesql: DELETE table ';'
+	             {
+                deleteAll($2);
+            }
+            |DELETE FROM table ';'
 	             {
                 deleteAll($3);
             }
@@ -395,7 +395,7 @@ deletesql: DELETE FROM table ';'
 
 updatesql: UPDATE table SET sets WHERE conditions ';'
 	             {
-                updateWhere($2, $4, $6);
+                updateWhere($2, $4, $6);//表，内容，条件
             }
             sets: set
                   {
@@ -417,7 +417,7 @@ updatesql: UPDATE table SET sets WHERE conditions ';'
                      $$->next_s = NULL;
                  }
                  |
-                 ID '=' QUOTE ID QUOTE
+                 ID '=' '"' ID '"'
                  {
                      $$ = (struct Setstruct *)malloc(sizeof(struct Setstruct));
                      $$->field = $1;

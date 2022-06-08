@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "sqlyacc.tab.h"
 //gcc dbfunction.c sqlyacc.tab.c  lex.yy.c -O0 -o minisql -std=c99
-
+//strdup()主要是拷贝字符串s的⼀个副本，由函数返回值返回，这个副本有⾃⼰的内存空间，和s不相⼲。
 %}
 
 %%
@@ -47,7 +47,6 @@ INTO           return INTO;
 "!"     |
 ","     {return yytext[0]; }
 
-\'      return QUOTE;
 
 \n
 [ \t]+

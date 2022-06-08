@@ -60,22 +60,22 @@ void createDB();//创建数据库文件夹
 void getDB();//输出.database文件
 void useDB();//将目录转换为指定database
 
-void createTable(struct Createstruct *cs_root);
-void getTable();
-void insertSingle(char * tableName, struct insertValue* values);
-void insertDouble(char * tableName, struct insertValue* rowNames, struct insertValue* valueNames);
+void createTable(struct Createstruct *cs_root);//将链表中的值读出并写入文件。
+void getTable();//输出.tables文件
+void insertInOrder(char * tableName, struct insertValue* values);//按顺序插入表
 
-void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableRoot);
-void freeWhere(struct Conditions *conditionRoot);
-int whereSearch(struct Conditions *conditionRoot, int totField, char allField[][64], char value[][64]);
+int  whereSearch(struct Conditions *conditionRoot, int totField, char allField[][64], char value[][64]);//返回wherecondition结果
+
 void selectWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableRoot, struct Conditions *conditionRoot);
+void selectNoWhere(struct Selectedfields *fieldRoot, struct Selectedtables *tableRoot);
 
 void updateWhere(char *tableName, struct Setstruct *setRoot, struct Conditions *conditionRoot);
 
-void deleteAll(char * tableName);
-void deleteWhere(char *tableName, struct Conditions *conditionRoot);
+void deleteAll(char * tableName);//读出表头然后删除表中所有元组->空表，回写表头
+void deleteWhere(char *tableName, struct Conditions *conditionRoot);//条件删除
 
-void dropTable(char * tableName);
-void dropDB();
+void dropTable(char * tableName);//删表改管理文件
+void dropDB();//用system函数调用rm -rf删除文件，然后复制一份.databases.tmp回写.databases时不写删除的表
+void freeWhere(struct Conditions *conditionRoot);//回收condition树内存
 
 #endif
